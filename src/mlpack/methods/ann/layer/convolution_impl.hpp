@@ -436,7 +436,7 @@ void ConvolutionType<
                   1, // strideHeight
                   1, // padWidth
                   1, // padHeight
-                  true); // Add additional parameters if necessary
+                  true); 
           }
       }
   }
