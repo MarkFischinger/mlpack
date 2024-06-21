@@ -61,7 +61,6 @@ void LayerNormType<MatType>::Forward(
   output = input.each_row() - mean;
   inputMean = output;
 
-  // Vectorized division using AVX
   size_t n_elem = output.n_elem;
   float* output_ptr = output.memptr();
   float* variance_ptr = variance.memptr();
