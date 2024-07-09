@@ -50,7 +50,9 @@ namespace mlpack {
 template<
     typename OutputLayerType = NegativeLogLikelihood,
     typename InitializationRuleType = RandomInitialization,
-    typename MatType = arma::mat>
+    typename MatType = arma::mat, 
+    typename NetworkType = MultiLayer<MatType> 
+>
 class FFN
 {
  public:
@@ -308,6 +310,38 @@ class FFN
                                        const MatType& targets,
                                        MatType& gradients);
 
+  // Updated Network() functions to use NetworkType
+  const NetworkType& Network() const { return network; }
+  NetworkType& Network() { return network; }
+
+  // Method for quantization
+  template<typename TargetMatType>
+  FFN<OutputLayerType, InitializationRuleType, TargetMatType, NetworkType> Quantize() const
+  {
+      FFN<OutputLayerType, InitializationRuleType, TargetMatType, NetworkType> quantizedNetwork;
+
+      // Copy network parameters
+      quantizedNetwork.InputDimensions() = this->InputDimensions();
+      quantizedNetwork.OutputDimensions() = this->OutputDimensions();
+      quantizedNetwork.Reset() = this->Reset();
+      quantizedNetwork.NumFunctions() = this->NumFunctions();
+
+      // Quantize each layer
+      for (size_t i = 0; i < this->Network().Network().size(); ++i)
+      {
+          auto quantizedLayer = this->Network().Network()[i]->template As<TargetMatType>();
+          quantizedNetwork.Network().Network().push_back(quantizedLayer);
+      }
+
+      // Quantize the parameters
+      quantizedNetwork.Parameters() = arma::conv_to<TargetMatType>::from(this->Parameters());
+
+      // Reset the network to ensure correct weight aliasing
+      quantizedNetwork.Reset();
+
+      return quantizedNetwork;
+  }
+
   /**
    * Evaluate the feedforward network with the given predictors and responses.
    * This functions is usually used to monitor progress while training.
@@ -513,7 +547,7 @@ class FFN
   InitializationRuleType initializeRule;
 
   //! All of the network is stored inside this multilayer.
-  MultiLayer<MatType> network;
+  NetworkType network;
 
   /**
    * Matrix of (trainable) parameters.  Each weight here corresponds to a layer,

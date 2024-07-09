@@ -143,6 +143,25 @@ class LinearType : public Layer<MatType>
   template<typename Archive>
   void serialize(Archive& ar, const uint32_t /* version */);
 
+  using Layer<MatType>::As;
+
+  template<typename TargetMatType>
+  Layer<TargetMatType>* As() const
+  {
+    // Create a new linear layer of the target type
+    LinearType<TargetMatType, RegularizerType>* newLayer = 
+        new LinearType<TargetMatType, RegularizerType>(this->outSize, this->regularizer);
+    
+    // Copy non-weight parameters
+    newLayer->inSize = this->inSize;
+    newLayer->outSize = this->outSize;
+    
+    // Note: weights will be quantized separately, so no need to copy them here
+    
+    return newLayer;
+  }
+
+
  private:
   //! Locally-stored number of input units.
   size_t inSize;
