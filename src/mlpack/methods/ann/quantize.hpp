@@ -6,25 +6,24 @@
 #include <mlpack/methods/ann/layer/layer.hpp>
 #include "quantization_utils.hpp"
 
+
+// In quantize.hpp
 namespace mlpack {
 namespace ann {
 
-/**
- * Quantize a neural network from one matrix type to another.
- *
- * @tparam TargetType The target element type for quantization (e.g., int8_t).
- * @tparam NetworkType The type of the original network.
- * @param network The original network to be quantized.
- * @return A new network with weights quantized to the TargetType.
- */
-template<typename TargetType, typename NetworkType>
+template<
+    typename TargetType,
+    typename NetworkType,
+    typename QuantizationStrategyType = QuantizationStrategy<TargetType>
+>
 auto Quantize(const NetworkType& network)
 {
   using SourceMatType = typename NetworkType::MatType;
-  using TargetMatType = typename SourceMatType::template changed_type<TargetType>::type;
+  using TargetMatType = typename arma::Mat<TargetType>::template type;
   
   NetworkType quantizedNetwork;
-  
+  QuantizationStrategyType quantizationStrategy;
+
   // Copy network parameters
   quantizedNetwork.InputDimensions() = network.InputDimensions();
   quantizedNetwork.OutputDimensions() = network.OutputDimensions();
@@ -34,14 +33,13 @@ auto Quantize(const NetworkType& network)
   // Quantize each layer
   for (size_t i = 0; i < network.Network().size(); ++i)
   {
-    auto quantizedLayer = network.Network()[i]->template As<TargetMatType>();
-    
+    auto quantizedLayer = network.Network()[i]->template Clone<TargetMatType>();
+
     // Quantize weights if the layer has them
     if (quantizedLayer->Parameters().n_elem > 0)
     {
       TargetMatType quantizedWeights;
-      double scaleFactor = FindQuantizationScale<TargetType>(network.Network()[i]->Parameters());
-      QuantizeWeights(network.Network()[i]->Parameters(), quantizedWeights, scaleFactor);
+      quantizationStrategy.QuantizeWeights(network.Network()[i]->Parameters(), quantizedWeights);
       quantizedLayer->Parameters() = std::move(quantizedWeights);
     }
 
@@ -56,5 +54,3 @@ auto Quantize(const NetworkType& network)
 
 } // namespace ann
 } // namespace mlpack
-
-#endif

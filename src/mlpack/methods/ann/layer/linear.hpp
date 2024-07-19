@@ -59,6 +59,21 @@ class LinearType : public Layer<MatType>
 
   //! Clone the LinearType object. This handles polymorphism correctly.
   LinearType* Clone() const { return new LinearType(*this); }
+  
+  Layer<MatType>* Clone() const override
+  {
+    return new LinearType(*this);
+  }
+
+  template<typename TargetMatType>
+  Layer<TargetMatType>* Clone() const override
+  {
+    LinearType<TargetMatType, RegularizerType>* clone = 
+        new LinearType<TargetMatType, RegularizerType>(this->outSize, this->regularizer);
+    clone->inSize = this->inSize;
+    clone->outSize = this->outSize;
+    return clone;
+  }
 
   //! Copy the other Linear layer (but not weights).
   LinearType(const LinearType& layer);

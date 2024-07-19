@@ -73,7 +73,7 @@ class Layer
   virtual Layer* Clone() const = 0;
 
   template<typename TargetMatType>
-  virtual Layer<TargetMatType>* As() const = 0;
+  virtual Layer<TargetMatType>* Clone() const = 0;
 
   //! Move constructor.  This is not responsible for moving weights!
   Layer(Layer&& layer) :
